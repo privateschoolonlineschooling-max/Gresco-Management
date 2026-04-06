@@ -51,7 +51,7 @@ class ModerationCog(commands.Cog):
         await self.log_embed(embed)
 
     @app_commands.command(name="timeout", description="Temporarily mute a member for a duration.")
-    @app_commands.checks.has_permissions(timeout_members=True)
+    @app_commands.checks.has_permissions(moderate_members=True)
     @app_commands.describe(member="The member to timeout", duration="Duration like 10m or 1h", reason="Reason for timeout")
     async def timeout(
         self,
