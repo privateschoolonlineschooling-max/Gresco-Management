@@ -52,6 +52,16 @@ async def on_app_command_error(interaction: discord.Interaction, error: discord.
         )
         return
 
+    if isinstance(error, discord.app_commands.BotMissingPermissions):
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description="I do not have permission to perform this command. Please make sure my role has the required permissions.",
+                color=discord.Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
+
     if isinstance(error, discord.app_commands.CommandInvokeError):
         await interaction.response.send_message(
             embed=discord.Embed(

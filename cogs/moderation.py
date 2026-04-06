@@ -121,8 +121,40 @@ class ModerationCog(commands.Cog):
 
     @app_commands.command(name="ban", description="Permanently ban a member from the server.")
     @app_commands.checks.has_permissions(ban_members=True)
+    @app_commands.checks.bot_has_permissions(ban_members=True)
     @app_commands.describe(member="The member to ban", reason="Reason for the ban")
     async def ban(self, interaction: discord.Interaction, member: discord.Member, reason: str):
+        if not interaction.guild:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="This command can only be used inside a server.",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+
+        bot_member = interaction.guild.get_member(self.bot.user.id) or interaction.guild.me
+        if bot_member is None:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="I cannot verify my server role hierarchy, so I cannot ban this member.",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if bot_member.top_role <= member.top_role or member == bot_member:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="I cannot ban this member because their role is equal to or higher than mine.",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+
         try:
             await member.ban(reason=reason)
         except discord.HTTPException as error:
@@ -185,6 +217,16 @@ class ModerationCog(commands.Cog):
             await interaction.response.send_message(
                 embed=discord.Embed(
                     description="You do not have permission to use this command.",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+
+        if isinstance(error, app_commands.BotMissingPermissions):
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="I do not have permission to perform this command. Please make sure my role has the required permissions.",
                     color=discord.Color.red(),
                 ),
                 ephemeral=True,
