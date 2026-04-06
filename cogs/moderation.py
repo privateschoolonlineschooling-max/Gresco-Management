@@ -22,7 +22,7 @@ class ModerationCog(commands.Cog):
 
     async def _dm_user(self, member: discord.Member, action: str, reason: str, moderator: str, extra_info: str = "") -> None:
         embed = discord.Embed(
-            title=f"You have been {action}",
+            title=f"You have been {action} in {member.guild.name}",
             color=discord.Color.red(),
             timestamp=datetime.utcnow(),
         )
