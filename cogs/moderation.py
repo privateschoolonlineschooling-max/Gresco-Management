@@ -20,6 +20,21 @@ class ModerationCog(commands.Cog):
         if channel:
             await channel.send(embed=embed)
 
+    async def _dm_user(self, member: discord.Member, action: str, reason: str, moderator: str, extra_info: str = "") -> None:
+        embed = discord.Embed(
+            title=f"You have been {action}",
+            color=discord.Color.red(),
+            timestamp=datetime.utcnow(),
+        )
+        embed.add_field(name="Reason", value=reason, inline=False)
+        embed.add_field(name="Moderator", value=moderator, inline=False)
+        if extra_info:
+            embed.add_field(name="Details", value=extra_info, inline=False)
+        try:
+            await member.send(embed=embed)
+        except discord.HTTPException:
+            pass  # DM failed, but action still taken
+
     @staticmethod
     def _format_duration(value: str) -> timedelta:
         units = {"s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -36,6 +51,9 @@ class ModerationCog(commands.Cog):
     @app_commands.describe(member="The member to warn", reason="Reason for the warning")
     async def warn(self, interaction: discord.Interaction, member: discord.Member, reason: str):
         entry = self.data_manager.add_warning(member, str(interaction.user), reason)
+
+        warning_count = len(self.data_manager.get_user_actions(member)["warnings"])
+        await self._dm_user(member, "warned", reason, str(interaction.user), f"This is warning #{warning_count}")
 
         embed = discord.Embed(
             title="User Warned",
@@ -118,6 +136,7 @@ class ModerationCog(commands.Cog):
             return
 
         entry = self.data_manager.add_ban(member, str(interaction.user), reason)
+        await self._dm_user(member, "banned", reason, str(interaction.user), "This ban is permanent.")
         embed = discord.Embed(
             title="User Banned",
             color=discord.Color.dark_red(),
