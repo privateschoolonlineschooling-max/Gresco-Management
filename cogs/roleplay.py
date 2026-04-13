@@ -4,76 +4,64 @@ from discord.ext import commands
 from typing import Optional
 
 class RoleplayCog(commands.Cog):
-    """Shift and training commands for roleplay-style scheduling."""
+    """Commands for hosting events on the Kasi Vibes studio."""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="shift", description="Create a promo shift announcement.")
+    @app_commands.command(name="host_event", description="Host an event and post it to the selected channel.")
     @app_commands.describe(
-        promo_shift="Is this a promo shift?",
-        shift_name="Name of the shift",
-        host="Shift host",
-        co_host="Shift co-host",
-        time="Scheduled time for the shift",
-        ping_role="Optional role to ping"
+        event_name="The name of the event",
+        host="The member hosting the event",
+        link="The event link for Kasi Vibes Studio",
+        details="A short description or details for the event",
+        channel="The channel to post the event announcement into"
     )
-    async def shift(
+    async def host_event(
         self,
         interaction: discord.Interaction,
-        promo_shift: bool,
-        shift_name: str,
+        event_name: str,
         host: discord.Member,
-        co_host: Optional[discord.Member],
-        time: str,
-        ping_role: Optional[discord.Role] = None,
-    ):
-        title = "Promo Shift Scheduled" if promo_shift else "Shift Scheduled"
-        embed = discord.Embed(
-            title=title,
-            color=discord.Color.blurple(),
-        )
-        embed.add_field(name="Shift Name", value=shift_name, inline=False)
-        embed.add_field(name="Hosted By", value=host.mention, inline=True)
-        embed.add_field(name="Co-host", value=(co_host.mention if co_host else "None"), inline=True)
-        embed.add_field(name="Time", value=time, inline=False)
-        embed.set_footer(text="Use this message to coordinate your Roblox-style shift.")
-
-        content = ping_role.mention if ping_role else None
-        await interaction.response.send_message(content=content, embed=embed)
-
-    @app_commands.command(name="training", description="Create a training session announcement.")
-    @app_commands.describe(
-        store_colleague="Junior store colleague",
-        security="Junior security",
-        host="Training host",
-        co_host="Training co-host",
-        trainer="Trainer",
-        time="Training session time",
-        ping_role="Optional role to ping"
-    )
-    async def training(
-        self,
-        interaction: discord.Interaction,
-        store_colleague: str,
-        security: str,
-        host: discord.Member,
-        co_host: Optional[discord.Member],
-        trainer: discord.Member,
-        time: str,
-        ping_role: Optional[discord.Role] = None,
+        link: str,
+        details: str,
+        channel: discord.TextChannel,
     ):
         embed = discord.Embed(
-            title="Training Session Scheduled",
-            color=discord.Color.green(),
+            title="Kasi Vibes Studio Event",
+            description=details,
+            color=discord.Color.purple(),
         )
-        embed.add_field(name="Junior Store Colleague", value=store_colleague, inline=False)
-        embed.add_field(name="Junior Security", value=security, inline=False)
+        embed.add_field(name="Event", value=event_name, inline=False)
         embed.add_field(name="Host", value=host.mention, inline=True)
-        embed.add_field(name="Co-host", value=(co_host.mention if co_host else "None"), inline=True)
-        embed.add_field(name="Trainer", value=trainer.mention, inline=False)
-        embed.add_field(name="Time", value=time, inline=False)
-        embed.set_footer(text="Training details for your roleplay server.")
+        embed.add_field(name="Link", value=link, inline=False)
+        embed.set_footer(text="Posted by Kasi Vibes Studio event host.")
 
-        content = ping_role.mention if ping_role else None
-        await interaction.response.send_message(content=content, embed=embed)
+        if not interaction.guild or channel.guild.id != interaction.guild.id:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="Please select a channel from this server.",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+
+        try:
+            await channel.send(embed=embed)
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                embed=discord.Embed(
+                    description="I do not have permission to send messages in the selected channel.",
+                    color=discord.Color.red(),
+                ),
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                description=f"Event posted in {channel.mention}.",
+                color=discord.Color.green(),
+            ),
+            ephemeral=True,
+        )
